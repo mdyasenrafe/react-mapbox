@@ -6,23 +6,21 @@ import * as turf from "@turf/turf";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken =
-  "pk.eyJ1IjoibWR5YXNlbnJhZmUiLCJhIjoiY2x2Y2JkZW5oMGd0bDJpbXVidHA3c3MxZSJ9.Y1_I4S7zrgT4d62NclsImg"; // Put your Mapbox access token here
+  "pk.eyJ1IjoibWR5YXNlbnJhZmUiLCJhIjoiY2x2Y2JkZW5oMGd0bDJpbXVidHA3c3MxZSJ9.Y1_I4S7zrgT4d62NclsImg"; // Your Mapbox access token
 
 const App = () => {
   const mapContainerRef = useRef(null);
   const [map, setMap] = useState(null);
   const [draw, setDraw] = useState(null);
   const [area, setArea] = useState("");
-  const [lng, setLng] = useState(-70.9);
-  const [lat, setLat] = useState(42.35);
-  const [zoom, setZoom] = useState(9);
+
   useEffect(() => {
-    const initializeMap = () => {
+    if (!map && mapContainerRef.current) {
       const mapboxMap = new mapboxgl.Map({
-        container: mapContainerRef.current, // Reference to the div element
+        container: mapContainerRef.current,
         style: "mapbox://styles/mapbox/streets-v12",
-        zoom: zoom,
-        center: [lng, lat],
+        center: [-70.9, 42.35],
+        zoom: 9,
       });
 
       const mapboxDraw = new MapboxDraw({
@@ -41,10 +39,6 @@ const App = () => {
       mapboxMap.on("draw.create", updateArea);
       mapboxMap.on("draw.delete", updateArea);
       mapboxMap.on("draw.update", updateArea);
-    };
-
-    if (!map) {
-      initializeMap();
     }
 
     return () => {
@@ -52,18 +46,21 @@ const App = () => {
         map.remove();
       }
     };
-  }, [map]);
+  }, [map, mapContainerRef]); // Included mapContainerRef in the dependency array
 
   const updateArea = (e) => {
-    const data = draw.getAll();
-    if (data.features.length > 0) {
-      const calculatedArea = turf.area(data);
-      const roundedArea = Math.round(calculatedArea * 100) / 100;
-      setArea(`${roundedArea} square meters`);
-    } else {
-      setArea("");
-      if (e.type !== "draw.delete") {
-        alert("Click the map to draw a polygon.");
+    if (draw) {
+      // Ensure draw is not null
+      const data = draw.getAll();
+      if (data.features.length > 0) {
+        const calculatedArea = turf.area(data);
+        const roundedArea = Math.round(calculatedArea * 100) / 100;
+        setArea(`${roundedArea} square meters`);
+      } else {
+        setArea("");
+        if (e.type !== "draw.delete") {
+          alert("Click the map to draw a polygon.");
+        }
       }
     }
   };
